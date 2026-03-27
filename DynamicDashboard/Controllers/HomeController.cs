@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -14,10 +14,10 @@ namespace DynamicDashboard.Controllers
         // GET: Home
         public ActionResult Index()
         {
-            string query = @"DECLARE @cols NVARCHAR(MAX), @ColumnForSum AS NVARCHAR(MAX), @RowForSum AS NVARCHAR(MAX), @query NVARCHAR(MAX)
+            /*string query = @"DECLARE @cols NVARCHAR(MAX), @ColumnForSum AS NVARCHAR(MAX), @RowForSum AS NVARCHAR(MAX), @query NVARCHAR(MAX)
                             ;WITH MonthData AS (
                                 SELECT DISTINCT 
-		                            LEFT(DATENAME(MONTH, BirthDate), 3) AS MonthName,
+                              LEFT(DATENAME(MONTH, BirthDate), 3) AS MonthName,
                                     CASE 
                                         WHEN MONTH(BirthDate) >= 4 THEN MONTH(BirthDate) - 3
                                         ELSE MONTH(BirthDate) + 9
@@ -42,21 +42,21 @@ namespace DynamicDashboard.Controllers
 
                             SET @query = ';WITH cte
                             AS (
-	                            SELECT * FROM
+                             SELECT * FROM
                                 (
-		                            SELECT Country, City, ' + @cols + ', SUM('+@ColumnForSum+') Total
-		                            FROM (
-			                            SELECT Country, City,
-				                            LEFT(DATENAME(MONTH, BirthDate), 3) AS MonthName,
-				                            CONVERT(INT, Extension) Extension
-			                            FROM Employees
-			                            --WHERE DATENAME(MONTH, BirthDate) IN (''May'',''August'')
-		                            ) src
-		                            PIVOT (
-			                            SUM(Extension)
-			                            FOR MonthName IN (' + @cols + ')
-		                            ) pvt GROUP BY Country, City, '+ @cols +'
-	                            )r
+                              SELECT Country, City, ' + @cols + ', SUM('+@ColumnForSum+') Total
+                              FROM (
+                               SELECT Country, City,
+                                LEFT(DATENAME(MONTH, BirthDate), 3) AS MonthName,
+                                CONVERT(INT, Extension) Extension
+                               FROM Employees
+                               --WHERE DATENAME(MONTH, BirthDate) IN (''May'',''August'')
+                              ) src
+                              PIVOT (
+                               SUM(Extension)
+                               FOR MonthName IN (' + @cols + ')
+                              ) pvt GROUP BY Country, City, '+ @cols +'
+                             )r
                             )
                             SELECT Country, City, '+ @cols +', Total FROM cte
                             ORDER BY City
@@ -64,6 +64,56 @@ namespace DynamicDashboard.Controllers
                             --SELECT '''', '''', '+ @RowForSum +', SUM(Total) FROM cte
                             '
 
+                            EXEC sp_executesql @query";*/
+            string query = @"DECLARE @cols NVARCHAR(MAX), @ColumnForSum AS NVARCHAR(MAX), @RowForSum AS NVARCHAR(MAX), @query NVARCHAR(MAX)
+                            ;WITH MonthData AS (
+                                SELECT DISTINCT 
+		                            LEFT(DATENAME(MONTH, OrderDate), 3) AS MonthName,
+                                    CASE 
+                                        WHEN MONTH(OrderDate) >= 4 THEN MONTH(OrderDate) - 3
+                                        ELSE MONTH(OrderDate) + 9
+                                    END AS MonthNumber
+                                FROM Orders
+                                --WHERE DATENAME(MONTH, OrderDate) IN ('May','August')
+                            )
+
+                            SELECT @cols = STRING_AGG(QUOTENAME(MonthName), ',') 
+                                           WITHIN GROUP (ORDER BY MonthNumber)
+                            FROM MonthData
+
+                            --Row Total
+                            SELECT @ColumnForSum = REPLACE(@cols,',','+')
+                            SELECT @ColumnForSum = REPLACE(@ColumnForSum,'[','ISNULL([')
+                            SELECT @ColumnForSum = REPLACE(@ColumnForSum,']','],0)')
+
+                            --Column Total
+                            SELECT @RowForSum = REPLACE(@cols,',',',')
+                            SELECT @RowForSum = REPLACE(@RowForSum,'[','SUM(ISNULL([')
+                            SELECT @RowForSum = REPLACE(@RowForSum,']','],0))')
+
+                            SET @query = ';WITH cte
+                            AS (
+	                            SELECT * FROM
+                                (
+		                            SELECT ShipCountry, ShipCity, ' + @cols + ', SUM('+@ColumnForSum+') Total
+		                            FROM (
+			                            SELECT ShipCountry, ShipCity,
+				                            LEFT(DATENAME(MONTH, OrderDate), 3) AS MonthName,
+				                            CONVERT(INT, Freight) Freight
+			                            FROM Orders
+			                            --WHERE DATENAME(MONTH, OrderDate) IN (''May'',''August'')
+		                            ) src
+		                            PIVOT (
+			                            SUM(Freight)
+			                            FOR MonthName IN (' + @cols + ')
+		                            ) pvt GROUP BY ShipCountry, ShipCity, '+ @cols +'
+	                            )r
+                            )
+                            SELECT ShipCountry, ShipCity, '+ @cols +', Total FROM cte
+                            ORDER BY ShipCity
+                            --UNION ALL
+                            --SELECT '''', '''', '+ @RowForSum +', SUM(Total) FROM cte
+                            '
                             EXEC sp_executesql @query";
             string constr = ConfigurationManager.ConnectionStrings["constr"].ConnectionString;
             using (SqlConnection con = new SqlConnection(constr))
@@ -90,7 +140,6 @@ namespace DynamicDashboard.Controllers
                             i++;
                         }
                         dt.Rows.Add(totalRow);
-
 
                         return View(dt);
                     }
