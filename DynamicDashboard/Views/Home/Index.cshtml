@@ -1,4 +1,4 @@
-﻿@model DataTable
+@model DataTable
 @using System.Data;
 @{
     Layout = null;
@@ -11,50 +11,66 @@
     <meta name="viewport" content="width=device-width" />
     <title>Index</title>
     <style type="text/css">
-        body { font-family: Arial, Helvetica, sans-serif; font-size: 10px; }
-        table { border-spacing: 0; border-collapse: separate; border-radius: 10px; --border: 1px solid black; border: var(--border); overflow: hidden; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; }
+        table { border-spacing: 0; border-collapse: separate; border-radius: 10px; --border: 1px solid black; border: var(--border); overflow: hidden; width: 90%; }
         table th { background-color: #c1c1c1; }
         table th, table td { padding: 8px; }
         table tr:last-child, table tr:last-child > td { background-color: orange; color: black; }
         table tr td:last-child { background-color: orange; color: black; }
         table th:not(:last-child), table td:not(:last-child) { border-right: 1px solid black; }
         table tr:not(:last-child) > th, table tr:not(:last-child) > td { border-bottom: 1px solid black; }
+        .table-container { height: 400px; overflow-y: auto; }
+        /*.grid { position: relative; border: 1px solid #000; padding-top: 37px; background: #B34C00; width: 90%; }
+        .grid-container { overflow-y: auto; height: 300px; }
+        table { border-spacing: 0; width: 100%; }
+        td + td { border-left: 1px solid #000; }
+        td, th { border-bottom: 1px solid #000; background: #fff;  padding: 10px 25px; }
+        th { height: 0; line-height: 0; padding-top: 0; padding-bottom: 0; color: transparent; border: none; white-space: nowrap; }
+        th div { position: absolute; background: transparent; color: #fff; padding: 9px 25px; top: 0; margin-left: -25px; line-height: normal; border-left: 1px solid #800; }*/
     </style>
 </head>
 <body>
     @if (Model != null)
     {
-        <table align="center">
-            <tr>
-                @foreach (DataColumn dc in Model.Columns)
-                {
-                    <th>
-                        @if (!dc.ColumnName.Equals("Total"))
+        <div class="grid" align="center">
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr class="head">
+                            @foreach (DataColumn dc in Model.Columns)
+                            {
+                                <th>
+                                    @if (!dc.ColumnName.Equals("Total"))
+                                    {
+                                        <span>@dc.ColumnName</span>
+                                    }
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody class="body">
+                        @foreach (DataRow dr in Model.Rows)
                         {
-                            <span>@dc.ColumnName</span>
+                            <tr>
+                                @foreach (DataColumn dc in Model.Columns)
+                                {
+                                    <td>
+                                        @if (dr[dc.ColumnName] != DBNull.Value)
+                                        {
+                                            <span>@dr[dc.ColumnName]</span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color:red;">0</span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
                         }
-                    </th>
-                }
-            </tr>
-            @foreach (DataRow dr in Model.Rows)
-            {
-                <tr>
-                    @foreach (DataColumn dc in Model.Columns)
-                    {
-                        <td>
-                            @if (dr[dc.ColumnName] != DBNull.Value)
-                            {
-                                <span>@dr[dc.ColumnName]</span>
-                            }
-                            else
-                            {
-                                <span style="color:red;">0</span>
-                            }
-                        </td>
-                    }
-                </tr>
-            }
-        </table>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     }
 </body>
 </html>
